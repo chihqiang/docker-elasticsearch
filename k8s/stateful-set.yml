@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  generation: 1
+  name: es-cluster
+  namespace: kube-middleware
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: elasticsearch8
+  serviceName: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch8
+    spec:
+      containers:
+        - env:
+            - name: cluster.name
+              value: es-cluster
+            - name: node.name
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: discovery.seed_hosts
+              value: es-cluster-0,elasticsearch8,es-cluster-1,elasticsearch8,es-cluster-2,elasticsearch8
+            - name: cluster.initial_master_nodes
+              value: 'es-cluster-0,es-cluster-1,es-cluster-2'
+            - name: network.host
+              value: 0.0.0.0
+            - name: ES_JAVA_OPTS
+              value: '-Xms1g -Xmx1g'
+            - name: ELASTIC_PASSWORD
+              value: elastic
+            - name: xpack.security.enabled
+              value: 'true'
+            - name: xpack.security.transport.ssl.enabled
+              value: 'true'
+            - name: xpack.security.transport.ssl.verification_mode
+              value: certificate
+            - name: xpack.security.enrollment.enabled
+              value: 'true'
+            - name: xpack.security.http.ssl.enabled
+              value: 'false'
+            - name: xpack.security.transport.ssl.keystore.path
+              value: "/usr/share/elasticsearch/custom/certs/elastic-certificates.p12"
+            - name: xpack.security.transport.ssl.truststore.path
+              value: "/usr/share/elasticsearch/custom/certs/elastic-certificates.p12"
+          image: zhiqiangwang/elasticsearch:8.17.4
+          imagePullPolicy: Always
+          name: elasticsearch
+          ports:
+            - containerPort: 9200
+              name: tcp-9200
+              protocol: TCP
+            - containerPort: 9300
+              name: tcp-9300
+              protocol: TCP
+          resources:
+            limits:
+              cpu: '2'
+              memory: 2Gi
+            requests:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /usr/share/elasticsearch/data
+              name: data
+      dnsPolicy: ClusterFirst
+      initContainers:
+        - command:
+            - sh
+            - '-c'
+            - >-
+              chown -R 1000:1000 /usr/share/elasticsearch/data;
+              ulimit -n 65536;  
+              exit 0;
+          image: 'busybox:latest'
+          imagePullPolicy: Always
+          name: fix-permissions
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /usr/share/elasticsearch/data
+              name: data
+        - command:
+            - sysctl
+            - '-w'
+            - vm.max_map_count=262144
+          image: 'busybox:latest'
+          imagePullPolicy: Always
+          name: sysctl-max-map-count
+          securityContext:
+            privileged: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+        namespace: kube-middleware
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 500Gi
+        volumeMode: Filesystem
