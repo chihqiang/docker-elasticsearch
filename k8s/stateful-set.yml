@@ -47,9 +47,9 @@ spec:
             - name: xpack.security.http.ssl.enabled
               value: 'false'
             - name: xpack.security.transport.ssl.keystore.path
-              value: "/usr/share/elasticsearch/custom/certs/elastic-certificates.p12"
+              value: "/usr/share/elasticsearch/config/custom/certs/elastic-certificates.p12"
             - name: xpack.security.transport.ssl.truststore.path
-              value: "/usr/share/elasticsearch/custom/certs/elastic-certificates.p12"
+              value: "/usr/share/elasticsearch/config/custom/certs/elastic-certificates.p12"
           image: zhiqiangwang/elasticsearch:8.17.4
           imagePullPolicy: Always
           name: elasticsearch
