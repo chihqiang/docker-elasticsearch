@@ -2,7 +2,7 @@
 
 set -eux
 
-elasticsearch_version="7.17.6"
+elasticsearch_version="8.17.4"
 
 docker login -u $DOCKER_USER -p $DOCKER_PWD
 

@@ -1,17 +1,12 @@
-FROM elasticsearch:7.17.6
+FROM elasticsearch:8.17.4
 
-# https://www.elastic.co/guide/en/elasticsearch/reference/7.17/index.html
+ARG ELASTIC_STACK_CA_P12="/usr/share/elasticsearch/custom/certs/elastic-stack-ca.p12"
+ARG ELASTIC_CERTIFICATES_P12="/usr/share/elasticsearch/custom/certs/elastic-certificates.p12"
 
-# https://www.elastic.co/guide/en/kibana/7.17/install.html
+RUN mkdir -p /usr/share/elasticsearch/custom/certs
 
-# https://www.elastic.co/guide/en/elasticsearch/plugins/7.17/analysis-icu.html
+RUN bin/elasticsearch-certutil ca --pass '' --out ${ELASTIC_STACK_CA_P12}
 
-# https://github.com/medcl/elasticsearch-analysis-ik/releases/tag/v7.17.6
-
-# https://www.elastic.co/guide/en/elasticsearch/plugins/7.17/ingest-attachment.html
-
-# https://github.com/medcl/elasticsearch-analysis-pinyin/releases/tag/v7.17.6
-
-ADD plugins/ /usr/share/elasticsearch/plugins/
+RUN bin/elasticsearch-certutil cert --ca ${ELASTIC_STACK_CA_P12} --ca-pass '' --pass '' --out ${ELASTIC_CERTIFICATES_P12}
 
 EXPOSE 9200 9300
